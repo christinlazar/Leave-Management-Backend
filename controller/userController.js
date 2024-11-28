@@ -5,13 +5,11 @@ const signup = async (req,res)=>{
     try {
         const userData = req.body.formData
         const ExistingUser = await User.findOne({email:userData.email})
-        console.log("existing user",ExistingUser)
         if(ExistingUser != null){
             return res.status(409).json({success:false,message:"User already exists"})
         }else{
         const hashedPassword = await bcrypt.hash(userData.password,10)
            userData.password = hashedPassword
-           console.log("formData is",userData)
             await User.create(userData)
             return res.status(201).json({success:true,message:"User registration completed successfully"})
         }
@@ -23,7 +21,6 @@ const signup = async (req,res)=>{
 const login = async (req,res) =>{
     try {
         const userData = req.body.formData
-        console.log("userData",userData)
         const existingUser = await User.findOne({email:userData.email})
         if(existingUser == null){
             return res.status(404).json({success:false,registered:false})
@@ -59,14 +56,12 @@ const submitLeaveData = async (req,res)=>{
     try {
         const {LeaveData} = req.body
         const userId = req.userId
-        console.log("LeaveData",LeaveData)
         const start = new Date(LeaveData.startDate);
         const end = new Date(LeaveData.endDate);
         const diffInMs = end - start;
         const totalDays = diffInMs / (1000 * 60 * 60 * 24);
         const userData = await User.findOne({_id:userId})
         const totalLeaves = totalDays + parseInt(userData.sickLeave) + parseInt(userData.earnedLeave) + parseInt(userData.casualLeave)
-        console.log(`Total number of days (leaves): ${totalLeaves}`);
         if(totalLeaves > 25){
             return res.json({success:false,exceededNumberOfDays:true})
         }else{

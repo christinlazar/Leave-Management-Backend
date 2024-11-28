@@ -1,11 +1,8 @@
 const JWT = require('../utils/jwt')
 const authenticationMiddleware = async (req,res,next)=>{
     try {
-        console.log("Inauthentication")
         const accessToken = req.cookies.accessToken
-        console.log("access",accessToken)
         const isVerified = await JWT.verifyJWT(accessToken)
-        console.log("isVerifued",isVerified)
         if(isVerified){
             req.userId = isVerified.id
             next()
