@@ -36,7 +36,6 @@ const login = async (req,res) =>{
             return res.status(401).json({success:false,password:false})
         }
     } catch (error) {
-        console.log(error)
         return res.status(500).json({serverError:true,error:error.message})
     }
 }
@@ -47,7 +46,6 @@ const getLeaveData = async(req,res)=>{
         const user = await User.findOne({_id:userId})
         return res.status(200).json({success:true,userData:user})
     } catch (error) {
-        console.error(error)
         return res.status(500).json({serverError:true,error:error.message})
     }
 }
@@ -65,15 +63,49 @@ const submitLeaveData = async (req,res)=>{
         if(totalLeaves > 25){
             return res.json({success:false,exceededNumberOfDays:true})
         }else{
+        const restrictedDates = [];
+        let currentDate = start;
+        while (currentDate <= end) {
+            restrictedDates.push(new Date(currentDate));
+            currentDate.setDate(currentDate.getDate() + 1);
+        }
             if(LeaveData.leaveType == 'sick'){
                 const leavesToadd = parseInt(totalDays) + parseInt(userData.sickLeave)
-                await User.findOneAndUpdate({_id:userId},{$set:{sickLeave:leavesToadd,comment:LeaveData.comment}})
+                await User.findOneAndUpdate(
+                    {_id:userId},
+                    {$set:
+                        {
+                            sickLeave:leavesToadd,comment:LeaveData.comment
+                        },
+                        $addToSet: {
+                            restrictedDates: { $each: restrictedDates }
+                        }
+
+                    })
             }else if(LeaveData.leaveType == 'casual'){
                 const leavesToadd = parseInt(totalDays) + parseInt(userData.casualLeave)
-                await User.findOneAndUpdate({_id:userId},{$set:{casualLeave:leavesToadd,comment:LeaveData.comment}})
+                await User.findOneAndUpdate(
+                    {_id:userId},
+                    {$set:
+                        {
+                            casualLeave:leavesToadd,comment:LeaveData.comment
+                        },
+                        $addToSet: {
+                            restrictedDates: { $each: restrictedDates }
+                        }
+                    })
             }else if(LeaveData.leaveType == 'earned'){
                 const leavesToadd = parseInt(totalDays) + parseInt(userData.earnedLeave)
-                await User.findOneAndUpdate({_id:userId},{$set:{earnedLeave:leavesToadd,comment:LeaveData.comment}})
+                await User.findOneAndUpdate(
+                    {_id:userId},
+                    {$set:
+                        {
+                            earnedLeave:leavesToadd,comment:LeaveData.comment
+                        },
+                        $addToSet: {
+                            restrictedDates: { $each: restrictedDates }
+                        }
+                    })
             }
         }
         return res.status(200).json({success:true})
@@ -82,4 +114,14 @@ const submitLeaveData = async (req,res)=>{
     }
 }
 
-module.exports = {signup,login,getLeaveData,submitLeaveData}
+const fetchRestrictedDates = async (req,res)=>{
+    try {
+        const userID = req.userId
+        const userData = await User.findOne({_id:userID})
+        return res.json({restrictedDates:userData.restrictedDates})
+    } catch (error) {
+        return res.status(500).json({serverError:true,error:error.message})
+    }
+}
+
+module.exports = {signup,login,getLeaveData,submitLeaveData,fetchRestrictedDates}

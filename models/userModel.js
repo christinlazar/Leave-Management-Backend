@@ -31,6 +31,10 @@ const userModel = mongoose.Schema({
     comment:{
         type:String,
     },
+    restrictedDates: {
+        type: [Date], 
+        default: []
+    },
   
 })
 const User = mongoose.model('User',userModel)
